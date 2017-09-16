@@ -3,7 +3,7 @@ module:depends("roster")
 
 local jid = require "util.jid";
 local dbus = require "lua-dbus"
-local st_msg = require "util.stanza".message
+local st = require "util.stanza"
 local groups = {}
 local phonebook = {}
 local addressbook = {}
@@ -77,14 +77,14 @@ local function handleSignalMessage (timestamp, sender, groupInfo, msg, attachmen
 
   if next(groupInfo) == "len" then  -- it's a normal message
     from = jid.join(sender, module.host)
-    stanza = st_msg({to=to, from=from, type="chat"}, msg)
+    stanza = st.message({to=to, from=from, type="chat"}, msg)
     module:send(stanza)
   else                              -- it's a group message
     _invoke('getGroupName', {"ay", groupInfo}, function (name)
       groups[name:lower()] = groupInfo
       from = jid.join(name, module.host)
       msgPrefixed = sender.."\n"..msg
-      stanza = st_msg({to=to, from=from, type="chat"}, msgPrefixed)
+      stanza = st.message({to=to, from=from, type="chat"}, msgPrefixed)
       module:send(stanza)
     end)
   end
