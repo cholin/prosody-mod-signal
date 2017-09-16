@@ -38,21 +38,19 @@ end
 
 
 local function handleMessage(event)
-	local stanza = event.stanza;
-	local body = stanza:get_child_text("body");
+  local stanza = event.stanza;
+  local body = stanza:get_child_text("body");
 
-	if not body or stanza.attr.type == "error" then
-		return nil;
-	end
+  if not body or stanza.attr.type == "error" then
+    return nil;
+  end
 
-	if stanza.attr.to ~= nil and stanza.attr.from ~= nil then
+  if stanza.attr.to ~= nil and stanza.attr.from ~= nil then
     local receiver = jid.split(stanza.attr.to)
 
     if addressbook[receiver] then
       receiver = addressbook[receiver]
     end
-
-    module:log("info", "Incoming jabber message from %s", receiver)
 
     if string.sub(receiver, 1, 1) ==  "+" then
       sendSignalMessage(receiver, body)
@@ -61,7 +59,7 @@ local function handleMessage(event)
       sendSignalGroupMessage(groups[receiver], body)
       return true;
     end
-	end
+  end
 end
 
 local function handleSignalMessage (timestamp, sender, groupInfo, msg, attachments)
@@ -111,8 +109,8 @@ local function injectRoster(username, host, roster)
 end
 
 local function injectFakePresence(event)
-	local attr = event.stanza.attr;
-	if attr.to ~= nil and attr.from ~= nil and attr.type == "unavailable" then
+  local attr = event.stanza.attr;
+  if attr.to ~= nil and attr.from ~= nil and attr.type == "unavailable" then
     module:log("info", "Injecting fake presence for %s", attr.from)
     module:send(st.presence({from=attr.from, to=attr.to}))
     return true
