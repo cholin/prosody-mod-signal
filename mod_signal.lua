@@ -38,7 +38,7 @@ end
 
 
 local function handleMessage(event)
-	local session, stanza = event.origin, event.stanza;
+	local stanza = event.stanza;
 	local body = stanza:get_child_text("body");
 
 	if not body or stanza.attr.type == "error" then
