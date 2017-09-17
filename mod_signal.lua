@@ -9,6 +9,7 @@ local phonebook = {}
 local addressbook = {}
 
 local signal_relay_user = module:get_option_string("signal_relay_user");
+local signal_relay_jid = jid.join(signal_relay_user, module.host)
 local signal_relay_phonebook = module:get_option("signal_relay_phonebook", {});
 local signal_opts = {
     bus = 'system',
@@ -45,7 +46,7 @@ local function handleMessage(event)
     return nil;
   end
 
-  if stanza.attr.to ~= nil and stanza.attr.from ~= nil then
+  if stanza.attr.to ~= nil and jid.bare(stanza.attr.from) == signal_relay_jid then
     local receiver = jid.split(stanza.attr.to)
 
     if addressbook[receiver] then
@@ -63,27 +64,25 @@ local function handleMessage(event)
 end
 
 local function handleSignalMessage (timestamp, sender, groupInfo, msg, attachments)
-  local stanza, from, to;
-
-  to = jid.join(signal_relay_user, module.host)
+  local stanza, from;
 
   if phonebook[sender] then
     sender = phonebook[sender]
   end
 
-  module:log("info", "Incoming signal message from %s to %s", sender, to)
-
   if next(groupInfo) == "len" then  -- it's a normal message
     from = jid.join(sender, module.host)
-    stanza = st.message({to=to, from=from, type="chat"}, msg)
+    stanza = st.message({to=signal_relay_jid, from=from, type="chat"}, msg)
     module:send(stanza)
+    module:log("info", "Incoming signal message from %s to %s", sender, stanza.attr.to)
   else                              -- it's a group message
     _invoke('getGroupName', {"ay", groupInfo}, function (name)
       groups[name:lower()] = groupInfo
       from = jid.join(name, module.host)
       msgPrefixed = sender.."\n"..msg
-      stanza = st.message({to=to, from=from, type="chat"}, msgPrefixed)
+      stanza = st.message({to=signal_relay_jid, from=from, type="chat"}, msgPrefixed)
       module:send(stanza)
+      module:log("info", "Incoming signal group message from %s of group %s to %s", sender, name, stanza.attr.to)
     end)
   end
 end
@@ -110,7 +109,7 @@ end
 
 local function injectFakePresence(event)
   local attr = event.stanza.attr;
-  if attr.to ~= nil and attr.from ~= nil and attr.type == "unavailable" then
+  if jid.bare(attr.to) == signal_relay_jid and attr.from ~= nil and attr.type == "unavailable" then
     module:log("info", "Injecting fake presence for %s", attr.from)
     module:send(st.presence({from=attr.from, to=attr.to}))
     return true

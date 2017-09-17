@@ -8,9 +8,9 @@ configure prosody as a single user instance (federation disabled and no
 registration) with client to server encryption enabled.
 
 Message flow looks like the following
-
+```
   SIGNAL <-> signal-cli <-> dbus (system) <-> prosody <-> xmpp client
-
+```
 
 Installation (on Ubuntu 16.04)
 ------------
@@ -19,13 +19,13 @@ You need to install, configure and run signal-cli as dbus daemon on the system
 bus (see https://github.com/AsamK/signal-cli#install-system-wide-on-linux how to
 do this).  Futhermore you have to install ldbus and lua-dbus. We do this through
   the luarocks package manager:
-
+```
   $ apt install prosody lua luarocks
   $ luarocks install --server=http://luarocks.org/manifests/daurnimator ldbus DBUS_INCDIR=/usr/include/dbus-1.0/ DBUS_ARCH_INCDIR=/usr/lib/x86_64-linux-gnu/dbus-1.0/include
   $ wget https://raw.githubusercontent.com/cholin/lua-dbus/master/lua-dbus-scm-0.rockspec
   $ luarocks install lua-dbus-scm-0.rockspec
   $ git clone git@github.com:cholin/prosody-mod-signal.git
-
+```
 
 Configuration
 ------------
@@ -34,7 +34,7 @@ You need to provide a `signal_relay_user` and optional a
 `signal_relay_phonebook` for prefilled rooster entries.
 
 A prosody.cfg.lua should look somehow liuke the following:
-
+```
   plugin_paths = { "/path/to/this/module" }
   modules_enabled = {
   		"signal";
@@ -61,10 +61,10 @@ A prosody.cfg.lua should look somehow liuke the following:
   			key = "certs/localhost.key";
   			certificate = "certs/localhost.crt";
   		}
-
+```
 
 As no registration is allowed, we need to add our only account by hand:
-
+```
   $ prosodyctl adduser test@localhost
-
+```
 Now you should be able start for instance Pidgin to log in and chat.
