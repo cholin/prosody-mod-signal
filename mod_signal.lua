@@ -77,8 +77,13 @@ local function handleSignalMessage (timestamp, sender, groupInfo, msg, attachmen
     module:log("info", "Incoming signal message from %s to %s", sender, stanza.attr.to)
   else                              -- it's a group message
     _invoke('getGroupName', {"ay", groupInfo}, function (name)
-      groups[name:lower()] = groupInfo
-      from = jid.join(name, module.host)
+      local function sanitize(str)
+        x,_ = string.gsub(str, "%W", ""):lower()
+        return x
+      end
+      local node = sanitize(name)
+      groups[node] = groupInfo
+      from = jid.join(node, module.host)
       msgPrefixed = sender.."\n"..msg
       stanza = st.message({to=signal_relay_jid, from=from, type="chat"}, msgPrefixed)
       module:send(stanza)
