@@ -81,9 +81,14 @@ local function handleSignalMessage (timestamp, sender, groupInfo, msg, attachmen
         x,_ = string.gsub(str, "%W", ""):lower()
         return x
       end
+
       local node = sanitize(name)
-      groups[node] = groupInfo
       from = jid.join(node, module.host)
+      if not groups[node] then
+        groups[node] = groupInfo
+        module:send(st.presence({from=from, to=signal_relay_jid}))
+      end
+
       msgPrefixed = sender.."\n"..msg
       stanza = st.message({to=signal_relay_jid, from=from, type="chat"}, msgPrefixed)
       module:send(stanza)
@@ -114,10 +119,12 @@ end
 
 local function injectFakePresence(event)
   local attr = event.stanza.attr;
-  if jid.bare(attr.to) == signal_relay_jid and attr.from ~= nil and attr.type == "unavailable" then
-    module:log("info", "Injecting fake presence for %s", attr.from)
-    module:send(st.presence({from=attr.from, to=attr.to}))
+  if jid.bare(attr.to) == signal_relay_jid and attr.type == "unavailable" then
+    local jidBareFrom = jid.split(attr.from)
+    if addressbook[jidBareFrom] or groups[jidBareFrom] then
+      module:send(st.presence({from=attr.from, to=attr.to}))
     return true
+    end
   end
 end
 
