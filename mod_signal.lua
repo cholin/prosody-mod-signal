@@ -52,7 +52,7 @@ local function handleMessage(event)
       receiver = addressbook[receiver]
     end
 
-    module:log("debug", "Incoming jabber message from %s", receiver)
+    module:log("info", "Incoming jabber message from %s", receiver)
 
     if string.sub(receiver, 1, 1) ==  "+" then
       sendSignalMessage(receiver, body)
@@ -73,7 +73,7 @@ local function handleSignalMessage (timestamp, sender, groupInfo, msg, attachmen
     sender = phonebook[sender]
   end
 
-  module:log("debug", "Incoming signal message from %s to %s", sender, to)
+  module:log("info", "Incoming signal message from %s to %s", sender, to)
 
   if next(groupInfo) == "len" then  -- it's a normal message
     from = jid.join(sender, module.host)
@@ -107,6 +107,15 @@ local function injectRoster(username, host, roster)
       persist = false,
       groups = { ["Groups"] = true }
     };
+  end
+end
+
+local function injectFakePresence(event)
+	local attr = event.stanza.attr;
+	if attr.to ~= nil and attr.from ~= nil and attr.type == "unavailable" then
+    module:log("info", "Injecting fake presence for %s", attr.from)
+    module:send(st.presence({from=attr.from, to=attr.to}))
+    return true
   end
 end
 
