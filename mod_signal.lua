@@ -17,6 +17,11 @@ local signal_opts = {
     path = '/org/asamk/Signal'
 }
 
+local function sanitize(str)
+  x,_ = string.gsub(str, "%W", ""):lower()
+  return x
+end
+
 local function _invoke (method, args, cb)
     dbus.call(method, cb, {
         bus = signal_opts.bus,
@@ -77,16 +82,10 @@ local function handleSignalMessage (timestamp, sender, groupInfo, msg, attachmen
     module:log("info", "Incoming signal message from %s to %s", sender, stanza.attr.to)
   else                              -- it's a group message
     _invoke('getGroupName', {"ay", groupInfo}, function (name)
-      local function sanitize(str)
-        x,_ = string.gsub(str, "%W", ""):lower()
-        return x
-      end
-
       local node = sanitize(name)
       from = jid.join(node, module.host)
       if not groups[node] then
         groups[node] = groupInfo
-        module:send(st.presence({from=from, to=signal_relay_jid}))
       end
 
       msgPrefixed = sender.."\n"..msg
@@ -145,6 +144,17 @@ function module.load()
     phonebook[number] = name
     module:log("info", "%s: %s", name, number);
   end
+
+  module:log("info", "Signal Groups");
+  _invoke('getGroupIds', nil, function (group_ids)
+    for i, group_id in ipairs(group_ids) do
+      _invoke('getGroupName', {"ay", group_id}, function (name)
+        local sanitized = sanitize(name)
+        groups[sanitized] = group_id
+        module:log("info", "%d: %s (%s)", i, sanitized, name);
+      end)
+    end
+  end)
 
   module:log("info", "Signal module loaded for %s", signal_relay_user);
 end
